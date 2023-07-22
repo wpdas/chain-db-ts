@@ -1,4 +1,4 @@
-# ChainDB TS
+# Chain DB - TS
 
 ChainDB TS is a library that allows the usage of the ChainDB database in TypeScript and JavaScript projects.
 
