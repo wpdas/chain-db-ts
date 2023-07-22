@@ -51,6 +51,7 @@ import { GreetingTable } from './tables'
 
 const main async () {
   // server | db-name | user | password
+  // If the `server` parameter is empty(null), then "http://localhost:2818" will be used.
   const db = connect('http://localhost:2818', 'test-db', 'root', '1234')
 
   // Initialize the "greeting" table using the "GreetingTable"
@@ -63,6 +64,7 @@ const main async () {
   greetingTable.table.greeting = "Hello my dear!"
   greetingTable.persist() // Data is persisted on the blockchain
 
+  // See the most updated values of the table
   console.log(greetingTable.table) // { greeting: 'Hello my dear!' }
 }
 main()
@@ -78,10 +80,13 @@ It is not possible to recover an account in which the user has forgotten access 
 
 ```ts
 const user_name = 'wenderson.fake'
+const user_pass = '1234'
+
+// Check if the given name is already in use
 const user_name_taken = await db.check_user_name(user_name)
 if (!user_name_taken.success) {
   // user name | password | units (optional) | password hint (optional - may be used in the future versions)
-  const user = await db.create_user_account(user_name, '1234', 2)
+  const user = await db.create_user_account(user_name, user_pass, 2)
   console.log(user.data)
   // {
   //   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
@@ -96,7 +101,9 @@ if (!user_name_taken.success) {
 This feature can be used for the "Login/Sign In" action.
 
 ```ts
-const user = await db.get_user_account('wenderson.fake', '1234')
+const user_name = 'wenderson.fake'
+const user_pass = '1234'
+const user = await db.get_user_account(user_name, user_pass)
 console.log(user.data)
 // {
 //   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
@@ -161,8 +168,8 @@ Use this feature to get the last unit transfer record involving a user.
 
 ```ts
 const wenderson_id = 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3'
-const last_units_transference_record = await db.get_all_transfers_by_user_id(wenderson_id)
-console.log(last_units_transference_record.data)
+const all_units_transfers_record = await db.get_all_transfers_by_user_id(wenderson_id)
+console.log(all_units_transfers_record.data)
 // [
 //   {
 //     from: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
