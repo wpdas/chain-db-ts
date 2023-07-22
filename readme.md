@@ -8,7 +8,7 @@ This database has some features by default, such as: create user account, get us
 
 The `unit` property present in each user's account can be anything the project wants, it can be a type of currency, item, resource.
 
-Visit the [ChainDB repository](https://github.com/wpdas/chain-db) to get to know more.
+Visit the [Chain DB repository](https://github.com/wpdas/chain-db) to get to know more.
 
 ## Install
 
