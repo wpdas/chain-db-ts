@@ -1,0 +1,40 @@
+{
+  "name": "chain-db-ts",
+  "version": "0.0.1",
+  "description": "Chain DB Client for Javascript/Typescript Node apps.",
+  "main": "./dist/cjs/index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist features index.d.ts index.js",
+    "build": "npm run clean; tsc -p tsconfig.prod.json; npm run build:cjs",
+    "build:esm": "tsc",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "start": "npm run build && node build/index.js",
+    "start:dev": "npx nodemon",
+    "prepack": "npm install; npm run build",
+    "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\"",
+    "prettier": "prettier --write \"{src,tests,example/src}/**/*.{js,ts,jsx,tsx}\""
+  },
+  "keywords": [
+    "chain",
+    "db",
+    "client",
+    "database"
+  ],
+  "author": "Wenderson Pires wendersonpdas@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.15.5",
+    "@types/sha256": "^0.2.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.7.3"
+  },
+  "repository": "git://github.com/wpdas/chain-db-ts.git",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "sha256": "^0.2.0"
+  }
+}

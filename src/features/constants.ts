@@ -1,0 +1,11 @@
+// Contants
+export const API = 'http://localhost:2818'
+export const CONTRACT_PAYLOAD = '/get_last_contract_transaction'
+export const CONTRACT_TRANSACTION = '/post_contract_transaction'
+export const CREATE_USER_ACCOUNT = '/create_user_account'
+export const GET_USER_ACCOUNT = '/get_user_account'
+export const GET_USER_ACCOUNT_BY_ID = '/get_user_account_by_id'
+export const TRANSFER_UNITS = '/transfer_units'
+export const GET_TRANSFER_BY_USER_ID = '/get_transfer_by_user_id'
+export const GET_ALL_TRANSFER_BY_USER_ID = '/get_all_transfers_by_user_id'
+export const CHECK_USER_NAME = '/check_user_name'
