@@ -62,7 +62,7 @@ const main async () {
 
   // Mutating data
   greetingTable.table.greeting = "Hello my dear!"
-  greetingTable.persist() // Data is persisted on the blockchain
+  await greetingTable.persist() // Data is persisted on the blockchain
 
   // See the most updated values of the table
   console.log(greetingTable.table) // { greeting: 'Hello my dear!' }
