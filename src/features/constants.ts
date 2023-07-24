@@ -1,6 +1,7 @@
 // Contants
 export const API = 'http://localhost:2818'
 export const CONTRACT_PAYLOAD = '/get_last_contract_transaction'
+export const CONTRACT_TRANSACTIONS_PAYLOAD = '/get_contract_transactions'
 export const CONTRACT_TRANSACTION = '/post_contract_transaction'
 export const CREATE_USER_ACCOUNT = '/create_user_account'
 export const GET_USER_ACCOUNT = '/get_user_account'

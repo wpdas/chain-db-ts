@@ -28,4 +28,6 @@ export type ContractTransactionData<Model> = {
   contract_id: string
   timestamp?: number
   data: Model
+  block_hash: string
+  block_height: number
 }

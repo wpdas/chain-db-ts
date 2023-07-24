@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ChainDB } from './chain-db'
-import { CONTRACT_PAYLOAD, CONTRACT_TRANSACTION } from './constants'
+import { CONTRACT_PAYLOAD, CONTRACT_TRANSACTION, CONTRACT_TRANSACTIONS_PAYLOAD } from './constants'
 import { ContractTransactionData, TransactionType } from './types'
 import { post } from './utils'
 
@@ -31,6 +31,31 @@ class Table<Model> {
 
     try {
       await post(url, body)
+    } catch {
+      throw new Error('Something went wrong!')
+    }
+  }
+
+  /**
+   * Get the history of changes. A list of transactions from the most recent to the most old
+   * in a range of depth
+   * @param depth
+   */
+  async getHistory(depth: number) {
+    const url = `${this.db.api}${CONTRACT_TRANSACTIONS_PAYLOAD}/${this.contract_id}/${this.db.access_key}/${depth}`
+
+    try {
+      const contract_response = await axios.get(url)
+      const contract_data_json_list: ContractTransactionData<Model>[] = contract_response.data
+      const transaction_data: Model[] = contract_data_json_list.map((transaction) => transaction.data)
+
+      // Return empty if theres no data
+      if (contract_data_json_list.length === 1 && contract_data_json_list[0].tx_type === TransactionType.NONE) {
+        return []
+      }
+
+      // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
+      return transaction_data
     } catch {
       throw new Error('Something went wrong!')
     }

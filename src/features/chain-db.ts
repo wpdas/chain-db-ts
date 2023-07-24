@@ -188,6 +188,12 @@ export class ChainDB {
        * Persist table data on chain
        */
       persist: () => Promise<void>
+      /**
+       * Get the history of changes. A list of transactions from the most recent to the most old
+       * in a range of depth
+       * @param depth
+       */
+      getHistory: (depth: number) => Promise<Model[]>
     }
   }
 }
