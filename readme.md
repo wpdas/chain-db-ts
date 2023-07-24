@@ -66,6 +66,17 @@ const main async () {
 
   // See the most updated values of the table
   console.log(greetingTable.table) // { greeting: 'Hello my dear!' }
+
+  // Get the last 100 changes
+  const greetingHistory = greetingTable.getHistory(100);
+  console.log(greetingHistory);
+  // [
+  //   { greeting: 'Hello my dear!' },
+  //   { greeting: 'Hi' },
+  //   { greeting: 'Ei, sou eu :D' },
+  //   { greeting: 'Heyo' },
+  //   ...
+  // ]
 }
 main()
 ```
