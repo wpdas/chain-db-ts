@@ -47,12 +47,13 @@ class Table<Model> {
     try {
       const contract_response = await axios.get(url)
       const contract_data_json_list: ContractTransactionData<Model>[] = contract_response.data
-      const transaction_data: Model[] = contract_data_json_list.map((transaction) => transaction.data)
 
       // Return empty if theres no data
       if (contract_data_json_list.length === 1 && contract_data_json_list[0].tx_type === TransactionType.NONE) {
         return []
       }
+
+      const transaction_data: Model[] = contract_data_json_list.map((transaction) => transaction.data)
 
       // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
       return transaction_data
