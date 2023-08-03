@@ -93,17 +93,17 @@ It is not possible to recover an account in which the user has forgotten access 
 const user_name = 'wenderson.fake'
 const user_pass = '1234'
 
-// Check if the given name is already in use
-const user_name_taken = await db.check_user_name(user_name)
-if (!user_name_taken.success) {
-  // user name | password | units (optional) | password hint (optional - may be used in the future versions)
-  const user = await db.create_user_account(user_name, user_pass, 2)
-  console.log(user.data)
+// user name | password | units (optional) | password hint (optional - may be used in the future versions)
+const result = await db.create_user_account(user_name, user_pass, 2)
+if (result.success) {
+  console.log(result.data)
   // {
   //   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
   //   user_name: 'wenderson.fake',
   //   units: 2
   // }
+} else {
+  console.error('Failed creating user:', result.error_msg)
 }
 ```
 
@@ -151,11 +151,9 @@ const suly_id = '136c406933d98e5c8bb4820f5145869bb5ad40647b768de4e9adb2a52d0dea2
 const wenderson_data = await db.get_user_account_by_id(wenderson_id)
 const units_to_transfer = 2
 
-if (wenderson_data.data!.units >= units_to_transfer) {
-  const res = await db.transfer_units(wenderson_id, suly_id, units_to_transfer)
-  console.log(res.success)
-  // true / false
-}
+const res = await db.transfer_units(wenderson_id, suly_id, units_to_transfer)
+console.log(res.success)
+// true / false
 ```
 
 ### Fetching the Latest Units Transfer Record
