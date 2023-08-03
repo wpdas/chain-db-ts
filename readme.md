@@ -49,7 +49,7 @@ class GreetingTable {
 import { connect } from 'chain-db-ts'
 import { GreetingTable } from './tables'
 
-const main async () {
+async function main() {
   // server | db-name | user | password
   // If the `server` parameter is empty(null), then "http://localhost:2818" will be used.
   const db = connect('http://localhost:2818', 'test-db', 'root', '1234')
@@ -81,7 +81,7 @@ const main async () {
 main()
 ```
 
-The next examples will not include the `db` implementation, ` import` lines and the `const main async () {}` block as this is implied.
+The next examples will not include the `db` implementation, ` import` lines and the `async function main() {}` block as this is implied.
 
 ### Create User Account
 
