@@ -1,12 +1,10 @@
 // Contants
-export const API = 'http://localhost:2818'
-export const CONTRACT_PAYLOAD = '/get_last_contract_transaction'
-export const CONTRACT_TRANSACTIONS_PAYLOAD = '/get_contract_transactions'
-export const CONTRACT_TRANSACTION = '/post_contract_transaction'
-export const CREATE_USER_ACCOUNT = '/create_user_account'
-export const GET_USER_ACCOUNT = '/get_user_account'
-export const GET_USER_ACCOUNT_BY_ID = '/get_user_account_by_id'
-export const TRANSFER_UNITS = '/transfer_units'
-export const GET_TRANSFER_BY_USER_ID = '/get_transfer_by_user_id'
-export const GET_ALL_TRANSFER_BY_USER_ID = '/get_all_transfers_by_user_id'
-export const CHECK_USER_NAME = '/check_user_name'
+export const DEFAULT_API_SERVER = 'http://localhost:2818'
+export const API_BASE = '/api/v1'
+export const CONNECT = `${API_BASE}/database/connect`
+export const GET_TABLE = (table: string) => `${API_BASE}/table/${table}`
+export const UPDATE_LAST_ITEM = (table: string) => `${API_BASE}/table/${table}/update`
+export const PERSIST_NEW_DATA = (table: string) => `${API_BASE}/table/${table}/persist`
+export const GET_HISTORY = (table: string, limit = 25) => `${API_BASE}/table/${table}/history?limit=${limit}`
+export const FIND_WHERE_BASIC = (table: string) => `${API_BASE}/table/${table}/find`
+export const FIND_WHERE_ADVANCED = (table: string) => `${API_BASE}/table/${table}/find-advanced`

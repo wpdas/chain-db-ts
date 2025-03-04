@@ -1,75 +1,192 @@
-# Chain DB - TS
+# Chain DB TypeScript Client
 
-ChainDB TS is a library that allows the usage of the ChainDB database in TypeScript and JavaScript projects.
+A TypeScript client for [Chain DB](https://github.com/wpdas/chain-db), a simple database that maintains a history of changes, allowing you to track how your data evolves over time.
 
-Chain DB is a Story-driven database. This system uses a chain of blocks with stored data. Each change generates a transaction that is saved in a block. The network works centrally, so persistent data is not decentralized.
+## Installation
 
-This database has some features by default, such as: create user account, get user account, transfer units and get transfer records as well as the main feature that is tables.
-
-The `unit` property present in each user's account can be anything the project wants, it can be a type of currency, item, resource.
-
-Visit the [Chain DB repository](https://github.com/wpdas/chain-db) to get to know more.
-
-## Install
-
-Install using npm or yarn:
-
-```sh
+```bash
 npm install chain-db-ts
-
 # or
-
 yarn add chain-db-ts
 ```
 
-## Usage examples
+## Usage
 
-First of all, it's good to know that all requests return a `BasicResponse<D>` object that has the following structure:
+### Connecting to Chain DB
 
-**success:** `boolean` (informs if the transaction was successful) <br/>
-**error_msg:** `string` (error message) <br/>
-**data:** `D` (any expected data type depending on the request) <br/>
+```typescript
+import { connect } from 'chain-db-ts'
 
-Make sure you have the database running on your local machine or use the server link from where the database is running.
+// Connect to Chain DB
+// Parameters: server | database | user | password
+// If the server parameter is null, "http://localhost:2818" will be used as default
+const db = connect({
+  server: 'http://localhost:2818',
+  database: 'my-database',
+  user: 'root',
+  password: '1234',
+})
+```
 
-### Table
+### Working with Tables
 
-Tables must be simple class with default values, empty or not. This class will be used as a reference to create the table's fields.
+Define your table structure using TypeScript interfaces:
 
-When it's time to persist the table's data on the chain, just call the `persit` database function.
+```typescript
+// Define your table structure
+interface GreetingTable {
+  greeting: string
+}
 
-```ts
-// Greeting Table
-class GreetingTable {
-  public greeting = 'Hi'
+// Define a more complex table
+interface UserTable {
+  id: number
+  name: string
+  email: string
+  active: boolean
+  createdAt: string
 }
 ```
 
-```ts
+### Getting a Table
+
+```typescript
+// Get a table instance
+// If the table already exists in the chain, its data will be loaded
+const greetingTable = await db.get_table<GreetingTable>('greeting')
+
+// Access the table data
+console.log(greetingTable.table) // e.g., { greeting: 'Hello' }
+```
+
+### Modifying and Persisting Data
+
+```typescript
+// Modify the table data
+greetingTable.table.greeting = 'Hello, Chain DB!'
+
+// Persist changes to database
+await greetingTable.persist()
+```
+
+### Updating the Last Item
+
+```typescript
+// Update the last item without creating a new one
+greetingTable.table.greeting = 'Updated greeting'
+await greetingTable.update()
+```
+
+### Getting Table History
+
+```typescript
+// Get the last 100 changes to the table
+const history = await greetingTable.getHistory(100)
+console.log(history)
+// Example output:
+// [
+//   { greeting: 'Hello, Chain DB!' },
+//   { greeting: 'Hello' },
+//   { greeting: 'Hi there' },
+//   ...
+// ]
+```
+
+### Querying Data
+
+#### Basic Queries
+
+```typescript
+// Find items with exact matches
+const users = await userTable.findWhere(
+  { active: true, name: 'John' }, // criteria
+  10, // limit (default: 1000)
+  true // reverse order (default: true)
+)
+```
+
+#### Advanced Queries
+
+```typescript
+import { Operators } from 'chain-db-ts'
+
+// Find items with advanced criteria
+const users = await userTable.findWhereAdvanced(
+  [
+    {
+      field: 'name',
+      operator: Operators.CONTAINS,
+      value: 'John',
+    },
+    {
+      field: 'age',
+      operator: Operators.GREATER_THAN,
+      value: 25,
+    },
+  ],
+  10, // limit
+  true // reverse order
+)
+```
+
+Available operators:
+
+- `EQUAL` (==)
+- `NOT_EQUAL` (!=)
+- `GREATER_THAN` (>)
+- `GREATER_THAN_OR_EQUAL` (>=)
+- `LESS_THAN` (<)
+- `LESS_THAN_OR_EQUAL` (<=)
+- `CONTAINS` (for strings and arrays)
+- `STARTS_WITH` (for strings)
+- `ENDS_WITH` (for strings)
+
+### Other Table Methods
+
+```typescript
+// Check if a table is empty
+const isEmpty = greetingTable.isEmpty()
+
+// Get the table name
+const tableName = greetingTable.getName()
+
+// Refetch the table data from the database
+await greetingTable.refetch()
+```
+
+## Complete Example
+
+```typescript
 import { connect } from 'chain-db-ts'
-import { GreetingTable } from './tables'
 
-const main async () {
-  // server | db-name | user | password
-  // If the `server` parameter is empty(null), then "http://localhost:2818" will be used.
-  const db = connect('http://localhost:2818', 'test-db', 'root', '1234')
+// Define table structure
+interface GreetingTable {
+  greeting: string
+}
 
-  // Initialize the "greeting" table using the "GreetingTable"
-  // class as a template. If there is already any data saved in
-  // the chain, this data will be populated in the table instance.
-  const greetingTable = await db.get_table('greeting', new GreetingTable())
-  console.log(greetingTable.table) // { greeting: 'Hi' }
+async function main() {
+  // Connect to Chain DB
+  const db = connect({
+    server: 'http://localhost:2818',
+    database: 'test-db',
+    user: 'root',
+    password: '1234',
+  })
 
-  // Mutating data
-  greetingTable.table.greeting = "Hello my dear!"
-  await greetingTable.persist() // Data is persisted on the blockchain
+  // Get the "greeting" table
+  const greetingTable = await db.get_table<GreetingTable>('greeting')
+  console.log(greetingTable.table) // e.g., { greeting: 'Hi' }
 
-  // See the most updated values of the table
+  // Modify and persist data
+  greetingTable.table.greeting = 'Hello my dear!'
+  await greetingTable.persist() // Data is persisted on database
+
+  // See the updated values
   console.log(greetingTable.table) // { greeting: 'Hello my dear!' }
 
   // Get the last 100 changes
-  const greetingHistory = greetingTable.getHistory(100);
-  console.log(greetingHistory);
+  const greetingHistory = await greetingTable.getHistory(100)
+  console.log(greetingHistory)
   // [
   //   { greeting: 'Hello my dear!' },
   //   { greeting: 'Hi' },
@@ -78,120 +195,10 @@ const main async () {
   //   ...
   // ]
 }
-main()
+
+main().catch(console.error)
 ```
 
-The next examples will not include the `db` implementation, ` import` lines and the `const main async () {}` block as this is implied.
+## License
 
-### Create User Account
-
-This is a default database feature that allows you to create user accounts within the database. As these are hashed accounts, the only data required is: Username and Password. This data is hashed, that is, only the user with the correct data can access the data.
-
-It is not possible to recover an account in which the user has forgotten access data.
-
-```ts
-const user_name = 'wenderson.fake'
-const user_pass = '1234'
-
-// Check if the given name is already in use
-const user_name_taken = await db.check_user_name(user_name)
-if (!user_name_taken.success) {
-  // user name | password | units (optional) | password hint (optional - may be used in the future versions)
-  const user = await db.create_user_account(user_name, user_pass, 2)
-  console.log(user.data)
-  // {
-  //   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-  //   user_name: 'wenderson.fake',
-  //   units: 2
-  // }
-}
-```
-
-### Get User Account Info
-
-This feature can be used for the "Login/Sign In" action.
-
-```ts
-const user_name = 'wenderson.fake'
-const user_pass = '1234'
-const user = await db.get_user_account(user_name, user_pass)
-console.log(user.data)
-// {
-//   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-//   user_name: 'wenderson.fake',
-//   units: 2
-// }
-```
-
-### Get User Account Info By User Id
-
-Just another way to fetch the user info.
-
-```ts
-const wenderson_id = 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3'
-const user = await db.get_user_account_by_id(wenderson_id)
-console.log(user.data)
-// {
-//   id: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-//   user_name: 'wenderson.fake',
-//   units: 2
-// }
-```
-
-### Transfer Units Between Two Users
-
-As said before, `unit` property present in each user's account can be anything the project wants, it can be a type of currency, item, resource.
-
-Below is an example of user `wenderson` trying to send 2 units to `suly`:
-
-```ts
-const wenderson_id = 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3'
-const suly_id = '136c406933d98e5c8bb4820f5145869bb5ad40647b768de4e9adb2a52d0dea2f'
-
-const wenderson_data = await db.get_user_account_by_id(wenderson_id)
-const units_to_transfer = 2
-
-if (wenderson_data.data!.units >= units_to_transfer) {
-  const res = await db.transfer_units(wenderson_id, suly_id, units_to_transfer)
-  console.log(res.success)
-  // true / false
-}
-```
-
-### Fetching the Latest Units Transfer Record
-
-Use this feature to get the last unit transfer record involving a user.
-
-```ts
-const wenderson_id = 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3'
-const last_units_transference_record = await db.get_transfer_by_user_id(wenderson_id)
-console.log(last_units_transference_record.data)
-// {
-//   from: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-//   to: '136c406933d98e5c8bb4820f5145869bb5ad40647b768de4e9adb2a52d0dea2f',
-//   units: 2
-// }
-```
-
-### Fetching All the Transfer of Units Records
-
-Use this feature to get the last unit transfer record involving a user.
-
-```ts
-const wenderson_id = 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3'
-const all_units_transfers_record = await db.get_all_transfers_by_user_id(wenderson_id)
-console.log(all_units_transfers_record.data)
-// [
-//   {
-//     from: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-//     to: '136c406933d98e5c8bb4820f5145869bb5ad40647b768de4e9adb2a52d0dea2f',
-//     units: 2
-//   },
-//   {
-//     from: '136c406933d98e5c8bb4820f5145869bb5ad40647b768de4e9adb2a52d0dea2f',
-//     to: 'b2e4e7c15f733d8c18836ffd22051ed855226d9041fb9452f17f498fc2bcbce3',
-//     units: 6
-//   },
-//   ...
-// ]
-```
+MIT
