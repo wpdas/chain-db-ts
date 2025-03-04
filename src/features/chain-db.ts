@@ -21,13 +21,6 @@ export class ChainDB {
     this.database = database
 
     try {
-      console.log('AAAA ====>', `${this.server}${CONNECT}`)
-      console.log('BBBB ====>', {
-        name: this.database,
-        user: user,
-        password: password,
-      })
-
       const response = await post(`${this.server}${CONNECT}`, {
         name: this.database,
         user: user,
@@ -40,7 +33,7 @@ export class ChainDB {
 
       this.auth = response.data.data
     } catch (e: any) {
-      throw new Error('Something went wrong!', e)
+      throw new Error(`Something went wrong! ${e.message || String(e)}`)
     }
   }
 
@@ -77,8 +70,8 @@ export class ChainDB {
   }
 }
 
-export const connect = (connection: Connection) => {
+export const connect = async (connection: Connection) => {
   let chainDb = new ChainDB()
-  chainDb.connect(connection)
+  await chainDb.connect(connection)
   return chainDb
 }

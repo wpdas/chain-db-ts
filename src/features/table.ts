@@ -38,8 +38,8 @@ class Table<Model> {
       if (!response.data.success) {
         throw new Error(response.data.message)
       }
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with persist operation: ${e.message || String(e)}`)
     }
   }
 
@@ -60,8 +60,8 @@ class Table<Model> {
       if (!response.data.success) {
         throw new Error(response.data.message)
       }
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with update operation: ${e.message || String(e)}`)
     }
   }
 
@@ -82,8 +82,8 @@ class Table<Model> {
 
       // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
       return response.data.data as Model[]
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with getHistory operation: ${e.message || String(e)}`)
     }
   }
 
@@ -96,8 +96,8 @@ class Table<Model> {
     try {
       const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
       this.table = response.data.data ? (response.data.data as Model) : ({} as Model)
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with refetch operation: ${e.message || String(e)}`)
     }
   }
 
@@ -153,8 +153,8 @@ class Table<Model> {
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
       return response.data.data as Model[]
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with findWhere operation: ${e.message || String(e)}`)
     }
   }
 
@@ -206,8 +206,8 @@ class Table<Model> {
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
       return response.data.data as Model[]
-    } catch {
-      throw new Error('Something went wrong!')
+    } catch (e: any) {
+      throw new Error(`Something went wrong with findWhereAdvanced operation: ${e.message || String(e)}`)
     }
   }
 }
