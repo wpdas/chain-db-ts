@@ -1,25 +1,14 @@
-import sha256 from 'sha256'
-import axios from 'axios'
-import { Access } from './access'
-import {
-  API,
-  CHECK_USER_NAME,
-  CREATE_USER_ACCOUNT,
-  GET_ALL_TRANSFER_BY_USER_ID,
-  GET_TRANSFER_BY_USER_ID,
-  GET_USER_ACCOUNT,
-  GET_USER_ACCOUNT_BY_ID,
-  TRANSFER_UNITS,
-} from './constants'
-import { BasicResponse, SignedUserAccount, TransferUnitsRegistry } from './types'
+import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS } from './constants'
 import { post } from './utils'
-import * as table from './table'
+import Table from './table'
+import { Connection, EventCallback } from './types'
+import Events from './events'
 
 export class ChainDB {
-  api: string = ''
-  name: string = ''
-  access: Access | null = null
-  access_key: string = ''
+  server: string = DEFAULT_API_SERVER
+  database: string = ''
+  auth: string = ''
+  private _events: Events | null = null
 
   /**
    * Connection information.
@@ -28,153 +17,36 @@ export class ChainDB {
    * @param user  User to access the data base
    * @param password  Password to access the data base
    */
-  connect(server: string | null, data_base: string, user: string, password: string) {
-    const key_data = `${data_base}${user}${password}`
-
-    let key = sha256(key_data)
-
-    this.api = server || API
-    this.name = data_base
-    this.access = new Access(user, password)
-    this.access_key = key
-  }
-
-  /**
-   * Create a new user account inside the connected table
-   * @param user_name
-   * @param password
-   * @param units
-   * @param password_hint
-   * @returns
-   */
-  async create_user_account(user_name: string, password: string, units?: number, password_hint?: string) {
-    const url = `${this.api}${CREATE_USER_ACCOUNT}`
-
-    const body = {
-      db_access_key: this.access_key,
-      user_name: user_name,
-      password: password,
-      password_hint: password_hint,
-      units: units,
-    }
+  async connect(connection: Connection) {
+    const { server, database, user, password } = connection
+    this.server = server || DEFAULT_API_SERVER
+    this.database = database
 
     try {
-      let response = await post(url, body)
-      return await (response.data as Promise<BasicResponse<SignedUserAccount>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
+      const response = await post(`${this.server}${CONNECT}`, {
+        name: this.database,
+        user: user,
+        password: password,
+      })
 
-  /**
-   * Get user account info (login method)
-   * @param user_name
-   * @param password
-   * @returns
-   */
-  async get_user_account(user_name: string, password: string) {
-    const url = `${this.api}${GET_USER_ACCOUNT}/${user_name}/${password}/${this.access_key}`
-    try {
-      let response = await axios.get(url)
-      return await (response.data as Promise<BasicResponse<SignedUserAccount>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
+      if (!response.data.success) {
+        throw new Error(response.data.message)
+      }
 
-  /**
-   * Get user account info by its id
-   * @param user_id
-   * @returns
-   */
-  async get_user_account_by_id(user_id: string) {
-    const url = `${this.api}${GET_USER_ACCOUNT_BY_ID}/${user_id}/${this.access_key}`
-    try {
-      let response = await axios.get(url)
-      return await (response.data as Promise<BasicResponse<SignedUserAccount>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
-
-  /**
-   * Check if user_name is already taken
-   * @param user_name
-   */
-  async check_user_name(user_name: string) {
-    const url = `${this.api}${CHECK_USER_NAME}/${user_name}/${this.access_key}`
-    try {
-      let response = await axios.get(url)
-      return await (response.data as Promise<BasicResponse<string>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
-
-  /**
-   * Transfer units between users
-   * @param from user_id
-   * @param to user_id
-   * @param units
-   * @returns
-   */
-  async transfer_units(from: string, to: string, units: number) {
-    const url = `${this.api}${TRANSFER_UNITS}`
-
-    const body = {
-      db_access_key: this.access_key,
-      from: from,
-      to: to,
-      units: units,
-    }
-
-    try {
-      let response = await post(url, body)
-      return await (response.data as Promise<BasicResponse<null>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
-
-  /**
-   * Fetch the last Transference of units Records by User
-   * @param user_id
-   * @returns
-   */
-  async get_transfer_by_user_id(user_id: string) {
-    const url = `${this.api}${GET_TRANSFER_BY_USER_ID}/${user_id}/${this.access_key}`
-
-    try {
-      let response = await axios.get(url)
-      return await (response.data as Promise<BasicResponse<TransferUnitsRegistry>>)
-    } catch {
-      throw new Error('Something went wrong!')
-    }
-  }
-
-  /**
-   * Fetch all Transference of units Records by User
-   * @param user_id
-   * @returns
-   */
-  async get_all_transfers_by_user_id(user_id: string) {
-    const url = `${this.api}${GET_ALL_TRANSFER_BY_USER_ID}/${user_id}/${this.access_key}`
-
-    try {
-      let response = await axios.get(url)
-      return await (response.data as Promise<BasicResponse<TransferUnitsRegistry[]>>)
-    } catch {
-      throw new Error('Something went wrong!')
+      this.auth = response.data.data
+    } catch (e: any) {
+      throw new Error(`Something went wrong! ${e.message || String(e)}`)
     }
   }
 
   /**
    * Initialize a table, fetching its more updated data
    */
-
-  async get_table<Model>(table_name: string, model: Model) {
-    const chainDbCopy = connect(this.api, this.name, this.access!.user, this.access!.password)
-    const table_data = await table.get<Model>(chainDbCopy, table_name, model)
+  async getTable<Model>(table_name: string) {
+    const tableData = new Table<Model>(table_name, this)
+    await tableData.refetch()
+    return tableData
+    // const table_data = await table.get<Model>(this, table_name, model)
 
     // NOTE: Although only the "table" and "persist" properties are displayed by
     // the lint, all Table properties are being exposed.
@@ -182,24 +54,63 @@ export class ChainDB {
     //
     // There was an attempt to return a new object with only the required
     // data, but this generates an error in the "this" instance of the Table.
-    return table_data as {
-      table: Model
+
+    // return table_data as {
+    //   table: Model
+    //   /**
+    //    * Persist table data on chain
+    //    */
+    //   persist: () => Promise<void>
+    //   /**
+    //    * Get the history of changes. A list of transactions from the most recent to the most old
+    //    * in a range of depth
+    //    * @param depth
+    //    */
+    //   getHistory: (depth: number) => Promise<Model[]>
+    // }
+  }
+
+  events() {
+    return {
       /**
-       * Persist table data on chain
+       * Subscribe to an event
+       * @param event Event name to subscribe to @see {EventTypes}
+       * @param callback Function to call when the event is received
        */
-      persist: () => Promise<void>
+      subscribe: (event: string, callback: EventCallback) => {
+        if (this._events === null) {
+          const wsUrl = `${this.server.replace('http', 'ws')}${WEB_SOCKET_EVENTS}`
+          this._events = new Events(wsUrl, this.auth)
+        }
+
+        this._events?.subscribe(event, callback)
+      },
+
       /**
-       * Get the history of changes. A list of transactions from the most recent to the most old
-       * in a range of depth
-       * @param depth
+       * Unsubscribe from an event
+       * @param event Event name to unsubscribe from @see {EventTypes}
+       * @param callback Optional callback to remove. If not provided, all callbacks for the event will be removed.
        */
-      getHistory: (depth: number) => Promise<Model[]>
+      unsubscribe: (event: string, callback?: EventCallback) => {
+        if (!this._events || !this._events.isConnected()) {
+          return
+        }
+
+        this._events.unsubscribe(event, callback)
+      },
+
+      /**
+       * Close the events transmission
+       */
+      closeEvents: () => {
+        this._events?.close()
+      },
     }
   }
 }
 
-export const connect = (server: string | null, data_base: string, user: string, password: string) => {
+export const connect = async (connection: Connection) => {
   let chainDb = new ChainDB()
-  chainDb.connect(server, data_base, user, password)
+  await chainDb.connect(connection)
   return chainDb
 }
