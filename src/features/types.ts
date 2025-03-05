@@ -46,3 +46,25 @@ export const Operators = {
   // (for strings)
   ENDS_WITH: 'EndsWith',
 }
+
+// Events
+export const EventTypes = {
+  TABLE_PERSIST: 'TablePersist',
+  TABLE_UPDATE: 'TableUpdate',
+}
+
+export type EventData = {
+  event_type: string
+  database: string
+  table: string
+  /**
+   * Data of the event (also to/from the table)
+   */
+  data: Record<string, any>
+  /**
+   * Timestamp of the event
+   */
+  timestamp: number
+}
+
+export type EventCallback = (data: EventData) => void

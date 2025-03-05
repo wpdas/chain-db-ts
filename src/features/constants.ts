@@ -8,3 +8,4 @@ export const PERSIST_NEW_DATA = (table: string) => `${API_BASE}/table/${table}/p
 export const GET_HISTORY = (table: string, limit = 25) => `${API_BASE}/table/${table}/history?limit=${limit}`
 export const FIND_WHERE_BASIC = (table: string) => `${API_BASE}/table/${table}/find`
 export const FIND_WHERE_ADVANCED = (table: string) => `${API_BASE}/table/${table}/find-advanced`
+export const WEB_SOCKET_EVENTS = `${API_BASE}/events`

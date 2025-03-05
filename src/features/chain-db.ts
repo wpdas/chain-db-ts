@@ -1,12 +1,14 @@
-import { DEFAULT_API_SERVER, CONNECT } from './constants'
+import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS } from './constants'
 import { post } from './utils'
 import Table from './table'
-import { Connection } from './types'
+import { Connection, EventCallback } from './types'
+import Events from './events'
 
 export class ChainDB {
   server: string = DEFAULT_API_SERVER
   database: string = ''
   auth: string = ''
+  private _events: Events | null = null
 
   /**
    * Connection information.
@@ -40,8 +42,7 @@ export class ChainDB {
   /**
    * Initialize a table, fetching its more updated data
    */
-
-  async get_table<Model>(table_name: string) {
+  async getTable<Model>(table_name: string) {
     const tableData = new Table<Model>(table_name, this)
     await tableData.refetch()
     return tableData
@@ -67,6 +68,44 @@ export class ChainDB {
     //    */
     //   getHistory: (depth: number) => Promise<Model[]>
     // }
+  }
+
+  events() {
+    return {
+      /**
+       * Subscribe to an event
+       * @param event Event name to subscribe to @see {EventTypes}
+       * @param callback Function to call when the event is received
+       */
+      subscribe: (event: string, callback: EventCallback) => {
+        if (this._events === null) {
+          const wsUrl = `${this.server.replace('http', 'ws')}${WEB_SOCKET_EVENTS}`
+          this._events = new Events(wsUrl, this.auth)
+        }
+
+        this._events?.subscribe(event, callback)
+      },
+
+      /**
+       * Unsubscribe from an event
+       * @param event Event name to unsubscribe from @see {EventTypes}
+       * @param callback Optional callback to remove. If not provided, all callbacks for the event will be removed.
+       */
+      unsubscribe: (event: string, callback?: EventCallback) => {
+        if (!this._events || !this._events.isConnected()) {
+          return
+        }
+
+        this._events.unsubscribe(event, callback)
+      },
+
+      /**
+       * Close the events transmission
+       */
+      closeEvents: () => {
+        this._events?.close()
+      },
+    }
   }
 }
 

@@ -20,7 +20,7 @@ import { connect } from 'chain-db-ts'
 // Connect to Chain DB
 // Parameters: server | database | user | password
 // If the server parameter is null, "http://localhost:2818" will be used as default
-const db = connect({
+const db = await connect({
   server: 'http://localhost:2818',
   database: 'my-database',
   user: 'root',
@@ -53,7 +53,7 @@ interface UserTable {
 ```typescript
 // Get a table instance
 // If the table already exists in the chain, its data will be loaded
-const greetingTable = await db.get_table<GreetingTable>('greeting')
+const greetingTable = await db.getTable<GreetingTable>('greeting')
 
 // Access the table data
 console.log(greetingTable.table) // e.g., { greeting: 'Hello' }
@@ -65,7 +65,7 @@ console.log(greetingTable.table) // e.g., { greeting: 'Hello' }
 // Modify the table data
 greetingTable.table.greeting = 'Hello, Chain DB!'
 
-// Persist changes to database
+// Persist changes to database (creates a new record)
 await greetingTable.persist()
 ```
 
@@ -91,6 +91,45 @@ console.log(history)
 //   ...
 // ]
 ```
+
+### Real-time Events with WebSockets
+
+Chain DB supports real-time updates through WebSockets. You can subscribe to table events to get notified when data changes:
+
+```typescript
+import { EventTypes, EventData } from 'chain-db-ts'
+
+// Subscribe to table update events
+db.events().subscribe(EventTypes.TABLE_UPDATE, (eventData: EventData) => {
+  console.log('Table updated:', eventData.table)
+  console.log('New data:', eventData.data)
+})
+
+// Subscribe to new data persistence events
+db.events().subscribe(EventTypes.TABLE_PERSIST, (eventData: EventData) => {
+  console.log('New data added to table:', eventData.table)
+  console.log('Data:', eventData.data)
+})
+
+// Unsubscribe from an event
+const myCallback = (eventData: EventData) => {
+  // Handle event
+}
+db.events().subscribe(EventTypes.TABLE_UPDATE, myCallback)
+// Later, when you want to unsubscribe:
+db.events().unsubscribe(EventTypes.TABLE_UPDATE, myCallback)
+
+// Close WebSocket connection when done
+db.events().closeEvents()
+```
+
+The `EventData` object contains:
+
+- `event_type`: The type of event (TableUpdate, TablePersist)
+- `database`: The database name
+- `table`: The table name
+- `data`: The data associated with the event
+- `timestamp`: When the event occurred
 
 ### Querying Data
 
@@ -157,7 +196,7 @@ await greetingTable.refetch()
 ## Complete Example
 
 ```typescript
-import { connect } from 'chain-db-ts'
+import { connect, EventTypes, EventData } from 'chain-db-ts'
 
 // Define table structure
 interface GreetingTable {
@@ -166,7 +205,7 @@ interface GreetingTable {
 
 async function main() {
   // Connect to Chain DB
-  const db = connect({
+  const db = await connect({
     server: 'http://localhost:2818',
     database: 'test-db',
     user: 'root',
@@ -174,8 +213,15 @@ async function main() {
   })
 
   // Get the "greeting" table
-  const greetingTable = await db.get_table<GreetingTable>('greeting')
+  const greetingTable = await db.getTable<GreetingTable>('greeting')
   console.log(greetingTable.table) // e.g., { greeting: 'Hi' }
+
+  // Subscribe to table update events
+  db.events().subscribe(EventTypes.TABLE_UPDATE, (eventData: EventData) => {
+    if (eventData.table === 'greeting') {
+      console.log('Greeting table updated:', eventData.data)
+    }
+  })
 
   // Modify and persist data
   greetingTable.table.greeting = 'Hello my dear!'
@@ -194,6 +240,9 @@ async function main() {
   //   { greeting: 'Heyo' },
   //   ...
   // ]
+
+  // Close WebSocket connection when done
+  db.events().closeEvents()
 }
 
 main().catch(console.error)
