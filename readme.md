@@ -1,6 +1,6 @@
-# Chain DB TypeScript/JavaScript Client (Node)
+# Chain DB TS/JS Client (Node)
 
-A TypeScript/JavaScript (node) client for [Chain DB](https://github.com/wpdas/chain-db), a secure database system with built-in history tracking, offering AES-256-GCM encryption, atomic operations with rollback capability, and automatic backups.
+A TypeScript / JavaScript client for [Chain DB](https://github.com/wpdas/chain-db), a secure database system with built-in history tracking, offering AES-256-GCM encryption, atomic operations with rollback capability, and automatic backups.
 
 ## Installation
 
