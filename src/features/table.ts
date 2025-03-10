@@ -1,35 +1,29 @@
 import axios from 'axios'
 import { ChainDB } from './chain-db'
-import {
-  FIND_WHERE_ADVANCED,
-  FIND_WHERE_BASIC,
-  GET_HISTORY,
-  GET_TABLE,
-  PERSIST_NEW_DATA,
-  UPDATE_LAST_ITEM,
-} from './constants'
+import { FIND_WHERE_ADVANCED, FIND_WHERE_BASIC, GET_HISTORY, GET_TABLE, PERSIST_NEW_DATA, GET_DOC } from './constants'
 import { post } from './utils'
-import { Criteria, CriteriaAdvanced } from './types'
+import { Criteria, CriteriaAdvanced, DocId, TableDoc } from './types'
+import { TableDocImpl } from './table-doc'
 
 class Table<Model> {
-  public table: Model // This is the table data
+  public currentDoc: Model // This is the table's document data
   private name = ''
   private db: ChainDB
 
   constructor(name: string, db: ChainDB) {
-    this.table = {} as Model
+    this.currentDoc = {} as Model
     this.name = name
     this.db = db
   }
 
   /**
-   * Persist table data changes
+   * Persist table's document data changes
    */
-  async persist() {
+  async persist(): Promise<DocId<Model>> {
     const url = `${this.db.server}${PERSIST_NEW_DATA(this.name)}`
 
     const body = {
-      data: this.table,
+      data: this.currentDoc,
     }
 
     try {
@@ -38,30 +32,10 @@ class Table<Model> {
       if (!response.data.success) {
         throw new Error(response.data.message)
       }
+
+      return response.data.data as DocId<Model>
     } catch (e: any) {
       throw new Error(`Something went wrong with persist operation: ${e.message || String(e)}`)
-    }
-  }
-
-  /**
-   * Update data of the last table's item (or create a new item if there is none).
-   * This ensures that no new item is created.
-   */
-  async update() {
-    const url = `${this.db.server}${UPDATE_LAST_ITEM(this.name)}`
-
-    const body = {
-      data: this.table,
-    }
-
-    try {
-      const response = await post(url, body, this.db.auth)
-
-      if (!response.data.success) {
-        throw new Error(response.data.message)
-      }
-    } catch (e: any) {
-      throw new Error(`Something went wrong with update operation: ${e.message || String(e)}`)
     }
   }
 
@@ -81,7 +55,7 @@ class Table<Model> {
       }
 
       // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as Model[]
+      return response.data.data as DocId<Model>[]
     } catch (e: any) {
       throw new Error(`Something went wrong with getHistory operation: ${e.message || String(e)}`)
     }
@@ -95,7 +69,7 @@ class Table<Model> {
 
     try {
       const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
-      this.table = response.data.data ? (response.data.data as Model) : ({} as Model)
+      this.currentDoc = response.data.data ? (response.data.data as DocId<Model>) : ({} as DocId<Model>)
     } catch (e: any) {
       throw new Error(`Something went wrong with refetch operation: ${e.message || String(e)}`)
     }
@@ -105,7 +79,7 @@ class Table<Model> {
    * Check if the table is empty
    */
   isEmpty() {
-    return Object.keys(this.table as {}).length === 0
+    return Object.keys(this.currentDoc as {}).length === 0
   }
 
   /**
@@ -152,13 +126,11 @@ class Table<Model> {
       }
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as Model[]
+      return response.data.data as DocId<Model>[]
     } catch (e: any) {
       throw new Error(`Something went wrong with findWhere operation: ${e.message || String(e)}`)
     }
   }
-
-  // TODO: Implement documentation
 
   /**
    * Find items in the table using advanced criteria with operators
@@ -205,9 +177,38 @@ class Table<Model> {
       }
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as Model[]
+      return response.data.data as DocId<Model>[]
     } catch (e: any) {
       throw new Error(`Something went wrong with findWhereAdvanced operation: ${e.message || String(e)}`)
+    }
+  }
+
+  /**
+   * Get the current document ID
+   */
+  getCurrentDocId() {
+    return (this.currentDoc as DocId<Model>).doc_id
+  }
+
+  /**
+   * Get a specific document by its ID
+   * @param doc_id The document ID to retrieve
+   * @returns A TableDoc instance with the specific document data
+   */
+  async getDoc(doc_id: string): Promise<TableDoc<Model>> {
+    const url = `${this.db.server}${GET_DOC(this.name, doc_id)}`
+
+    try {
+      const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+
+      if (!response.data.success) {
+        throw new Error(response.data.message)
+      }
+
+      // Create a TableDoc instance with the document data
+      return new TableDocImpl<DocId<Model>>(this.name, doc_id, response.data.data as DocId<Model>, this.db)
+    } catch (e: any) {
+      throw new Error(`Something went wrong with getDoc operation: ${e.message || String(e)}`)
     }
   }
 }

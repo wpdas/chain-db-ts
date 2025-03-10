@@ -1,6 +1,6 @@
 {
   "name": "chain-db-ts",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "Chain DB Client for Javascript/Typescript Node apps.",
   "main": "./dist/cjs/index.js",
   "module": "./index.js",

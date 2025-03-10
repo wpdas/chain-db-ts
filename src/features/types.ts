@@ -68,3 +68,43 @@ export type EventData = {
 }
 
 export type EventCallback = (data: EventData) => void
+
+/**
+ * Represents a specific document from a table
+ * Contains only the necessary methods to work with a specific document
+ */
+export interface TableDoc<Model> {
+  /**
+   * The document data
+   */
+  doc: DocId<Model>
+
+  /**
+   * Update the document data
+   * This will update the specific document without creating a new one
+   */
+  update(): Promise<void>
+
+  /**
+   * Get the table name this document belongs to
+   */
+  getTableName(): string
+
+  /**
+   * Refetch the document data from the database
+   * Useful when the document might have been updated by another application
+   */
+  refetch(): Promise<void>
+
+  /**
+   * Check if the document is empty
+   */
+  isEmpty(): boolean
+}
+
+export type DocId<Model> = Model & {
+  /**
+   * The document ID (unique identifier). Immutable.
+   */
+  readonly doc_id: string
+}
