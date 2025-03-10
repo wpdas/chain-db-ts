@@ -6,7 +6,10 @@ import { Criteria, CriteriaAdvanced, DocId, TableDoc } from './types'
 import { TableDocImpl } from './table-doc'
 
 class Table<Model> {
-  public currentDoc: Model // This is the table's document data
+  /**
+   * The current document data
+   */
+  public currentDoc: Model
   private name = ''
   private db: ChainDB
 
