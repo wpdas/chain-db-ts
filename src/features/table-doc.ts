@@ -1,8 +1,7 @@
-import axios from 'axios'
 import { ChainDB } from './chain-db'
 import { DocId, TableDoc } from './types'
 import { UPDATE_ITEM, GET_DOC } from './constants'
-import { post } from './utils'
+import { get, post } from './utils'
 
 /**
  * Implementation of TableDoc interface
@@ -63,7 +62,7 @@ export class TableDocImpl<Model> implements TableDoc<Model> {
     const url = `${this.db.server}${GET_DOC(this.tableName, this.doc_id)}`
 
     try {
-      const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+      const response = await get(url, this.db.auth)
 
       if (!response.data.success) {
         throw new Error(response.data.message)

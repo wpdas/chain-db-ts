@@ -1,7 +1,6 @@
-import axios from 'axios'
 import { ChainDB } from './chain-db'
 import { FIND_WHERE_ADVANCED, FIND_WHERE_BASIC, GET_HISTORY, GET_TABLE, PERSIST_NEW_DATA, GET_DOC } from './constants'
-import { post } from './utils'
+import { get, post } from './utils'
 import { Criteria, CriteriaAdvanced, DocId, TableDoc } from './types'
 import { TableDocImpl } from './table-doc'
 
@@ -51,7 +50,7 @@ class Table<Model> {
     const url = `${this.db.server}${GET_HISTORY(this.name, limit)}`
 
     try {
-      const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+      const response = await get(url, this.db.auth)
 
       if (!response.data.success) {
         throw new Error(response.data.message)
@@ -71,7 +70,8 @@ class Table<Model> {
     const url = `${this.db.server}${GET_TABLE(this.name)}`
 
     try {
-      const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+      // const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+      const response = await get(url, this.db.auth)
       this.currentDoc = response.data.data ? (response.data.data as DocId<Model>) : ({} as DocId<Model>)
     } catch (e: any) {
       throw new Error(`Something went wrong with refetch operation: ${e.message || String(e)}`)
@@ -204,7 +204,7 @@ class Table<Model> {
     const url = `${this.db.server}${GET_DOC(this.name, doc_id)}`
 
     try {
-      const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
+      const response = await get(url, this.db.auth)
 
       if (!response.data.success) {
         throw new Error(response.data.message)
