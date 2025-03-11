@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0-rc.3] - 2025-03-11
+
+### Changed
+
+- Added support to older version while using the `getCurrentDocId()` method.
+
 ## [1.0.0-rc.2] - 2025-03-05
 
 ### Added
