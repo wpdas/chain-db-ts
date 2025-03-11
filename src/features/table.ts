@@ -190,7 +190,9 @@ class Table<Model> {
    * Get the current document ID
    */
   getCurrentDocId() {
-    return (this.currentDoc as DocId<Model>).doc_id
+    const _doc = this.currentDoc as DocId<Model>
+    // Support to applications using older versions
+    return _doc.doc_id ? _doc.doc_id : ''
   }
 
   /**
