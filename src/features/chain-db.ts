@@ -1,7 +1,7 @@
 import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS } from './constants'
 import { post } from './utils'
 import Table from './table'
-import { Connection, EventCallback } from './types'
+import { Connection, ConnectionWithToken, EventCallback } from './types'
 import Events from './events'
 
 export class ChainDB {
@@ -40,11 +40,22 @@ export class ChainDB {
   }
 
   /**
+   * Connect to Chain DB with a token (Synchronously). This is useful if you don't want to use a promise to connect to Chain DB.
+   * @param connection Connection information with token
+   */
+  connectWithToken(connection: ConnectionWithToken) {
+    const { server, database, token } = connection
+    this.server = server || DEFAULT_API_SERVER
+    this.database = database
+    this.auth = token
+  }
+
+  /**
    * Initialize a table, fetching its more updated data
    */
-  async getTable<Model>(table_name: string) {
+  getTable<Model>(table_name: string) {
     const tableData = new Table<Model>(table_name, this)
-    await tableData.refetch()
+    // await tableData.refetch()
     return tableData
     // const table_data = await table.get<Model>(this, table_name, model)
 
@@ -112,5 +123,11 @@ export class ChainDB {
 export const connect = async (connection: Connection) => {
   let chainDb = new ChainDB()
   await chainDb.connect(connection)
+  return chainDb
+}
+
+export const connectWithToken = (connection: ConnectionWithToken) => {
+  let chainDb = new ChainDB()
+  chainDb.connectWithToken(connection)
   return chainDb
 }

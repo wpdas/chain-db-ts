@@ -8,24 +8,24 @@ class Table<Model> {
   /**
    * The current document data
    */
-  public currentDoc: Model
+  // private currentDoc: Model
   private name = ''
   private db: ChainDB
 
   constructor(name: string, db: ChainDB) {
-    this.currentDoc = {} as Model
+    // this.currentDoc = {} as Model
     this.name = name
     this.db = db
   }
 
   /**
-   * Persist table's document data changes
+   * Create a new document in the table
    */
-  async persist(): Promise<DocId<Model>> {
+  async new(data: Model): Promise<TableDoc<Model>> {
     const url = `${this.db.server}${PERSIST_NEW_DATA(this.name)}`
 
     const body = {
-      data: this.currentDoc,
+      data: data,
     }
 
     try {
@@ -35,18 +35,21 @@ class Table<Model> {
         throw new Error(response.data.message)
       }
 
-      return response.data.data as DocId<Model>
+
+      // Create a TableDoc instance with the document data
+      return new TableDocImpl<DocId<Model>>(this.name, response.data.data?.doc_id, response.data.data as DocId<Model>, this.db)
     } catch (e: any) {
-      throw new Error(`Something went wrong with persist operation: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong with persist operation: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 
   /**
    * Get the history of changes. A list of transactions from the most recent to the most old
    * in a range of depth
-   * @param limit
+   * @param limit Maximum number of items to return (default: 100)
    */
-  async getHistory(limit: number) {
+  async getHistory(limit = 100) {
     const url = `${this.db.server}${GET_HISTORY(this.name, limit)}`
 
     try {
@@ -57,32 +60,29 @@ class Table<Model> {
       }
 
       // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as DocId<Model>[]
+      // return response.data.data as DocId<Model>[]
+
+      // Create a TableDoc instance for each document in the history
+      const history = response.data.data as DocId<Model>[]
+      return history.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
     } catch (e: any) {
-      throw new Error(`Something went wrong with getHistory operation: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong with getHistory operation: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 
   /**
-   * Refetch the table data
+   * Get the last record stored in the table
    */
-  async refetch() {
+  async last() {
     const url = `${this.db.server}${GET_TABLE(this.name)}`
+    const response = await get(url, this.db.auth)
+    // this.currentDoc = response.data.data ? (response.data.data as DocId<Model>) : ({} as DocId<Model>)
+    // return this.currentDoc
 
-    try {
-      // const response = await axios.get(url, { headers: { Authorization: `Basic ${this.db.auth}` } })
-      const response = await get(url, this.db.auth)
-      this.currentDoc = response.data.data ? (response.data.data as DocId<Model>) : ({} as DocId<Model>)
-    } catch (e: any) {
-      throw new Error(`Something went wrong with refetch operation: ${e.message || String(e)}`)
-    }
-  }
-
-  /**
-   * Check if the table is empty
-   */
-  isEmpty() {
-    return Object.keys(this.currentDoc as {}).length === 0
+    // Create a TableDoc instance with the document data
+    const data = response.data.data ? (response.data.data as DocId<Model>) : ({} as DocId<Model>)
+    return new TableDocImpl<DocId<Model>>(this.name, response.data.data?.doc_id, data, this.db)
   }
 
   /**
@@ -96,7 +96,7 @@ class Table<Model> {
    * Find items in the table using basic criteria with exact matches
    * @param criteria Object with fields and values to match exactly, e.g.: {age: 44, name: "john"}
    * @param limit Maximum number of items to return (default: 1000)
-   * @param reverse If true, returns items in reverse order (default: true)
+   * @param reverse If true, returns items in reverse order, newer items first (default: true)
    * @returns Array of found items matching the criteria
    * @example
    * // Find items where age is 44
@@ -129,14 +129,34 @@ class Table<Model> {
       }
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as DocId<Model>[]
+      // return response.data.data as DocId<Model>[]
+
+      // Create a TableDoc instance for each document in the found data
+      const foundData = response.data.data as DocId<Model>[]
+      return foundData.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
     } catch (e: any) {
-      throw new Error(`Something went wrong with findWhere operation: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong with findWhere operation: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 
   /**
-   * Find items in the table using advanced criteria with operators
+   * Find the first item in the table using basic criteria with exact matches
+   * @param criteria Object with fields and values to match exactly, e.g.: {age: 44, name: "john"}
+   * @param reverse If true, returns items in reverse order, newer items first (default: true)
+   * @returns The first found item matching the criteria or null if no item is found
+   */
+  async find(criteria: Criteria<Model>, reverse = true) {
+    const found = await this.findWhere(criteria, 1, reverse)
+    if (found.length === 0) {
+      const data = {} as DocId<Model>;
+      return new TableDocImpl<DocId<Model>>(this.name, '', data, this.db)
+    }
+    return found[0]
+  }
+
+  /**
+   * Find the first item in the table using advanced criteria with operators
    * @param criteria Array of criteria to filter items. Each criteria contains:
    * - field: The field name to filter
    * - operator: The operator to use in comparison. Available operators:
@@ -151,7 +171,7 @@ class Table<Model> {
    *   - EndsWith: Check if field ends with value (for strings)
    * - value: The value to compare against
    * @param limit Maximum number of items to return (default: 1000)
-   * @param reverse If true, returns items in reverse order (default: true)
+   * @param reverse If true, returns items in reverse order, newer items first (default: true)
    * @returns Array of found items matching the criteria
    * @example
    * // Find items where greeting contains "arg"
@@ -180,19 +200,51 @@ class Table<Model> {
       }
 
       // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      return response.data.data as DocId<Model>[]
+      // return response.data.data as DocId<Model>[]
+
+      // Create a TableDoc instance for each document in the found data
+      const foundData = response.data.data as DocId<Model>[]
+      return foundData.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
     } catch (e: any) {
-      throw new Error(`Something went wrong with findWhereAdvanced operation: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong with findWhereAdvanced operation: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 
   /**
-   * Get the current document ID
+   * Find the first single item in the table using advanced criteria with operators
+   * @param criteria Array of criteria to filter items. Each criteria contains:
+   * - field: The field name to filter
+   * - operator: The operator to use in comparison. Available operators:
+   *   - Eq (==) Equal
+   *   - Ne (!=) Not Equal
+   *   - Gt (>) Greater Than
+   *   - Ge (>=) Greater Than or Equal
+   *   - Lt (<) Less Than
+   *   - Le (<=) Less Than or Equal
+   *   - Contains: Check if field contains value (for strings and arrays)
+   *   - StartsWith: Check if field starts with value (for strings)
+   *   - EndsWith: Check if field ends with value (for strings)
+   * - value: The value to compare against
+   * @param reverse If true, returns items in reverse order, newer items first (default: true)
+   * @returns The first found item matching the criteria or null if no item is found
+   * @example
+   * // Find items where greeting contains "arg"
+   * table.findAdvanced([
+   *   {
+   *     field: "greeting",
+   *     operator: Operators.Contains,
+   *     value: "hello"
+   *   }
+   * ])
    */
-  getCurrentDocId() {
-    const _doc = this.currentDoc as DocId<Model>
-    // Support to applications using older versions
-    return _doc.doc_id ? _doc.doc_id : ''
+  async findAdvanced(criteria: CriteriaAdvanced<Model>[], reverse = true) {
+    const found = await this.findWhereAdvanced(criteria, 1, reverse)
+    if (found.length === 0) {
+      const data = ({} as DocId<Model>);
+      return new TableDocImpl<DocId<Model>>(this.name, '', data, this.db)
+    }
+    return found[0]
   }
 
   /**
@@ -200,7 +252,7 @@ class Table<Model> {
    * @param doc_id The document ID to retrieve
    * @returns A TableDoc instance with the specific document data
    */
-  async getDoc(doc_id: string): Promise<TableDoc<Model>> {
+  async getByDocId(doc_id: string): Promise<TableDoc<Model>> {
     const url = `${this.db.server}${GET_DOC(this.name, doc_id)}`
 
     try {
@@ -213,7 +265,8 @@ class Table<Model> {
       // Create a TableDoc instance with the document data
       return new TableDocImpl<DocId<Model>>(this.name, doc_id, response.data.data as DocId<Model>, this.db)
     } catch (e: any) {
-      throw new Error(`Something went wrong with getDoc operation: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong with getDoc operation: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 }

@@ -50,7 +50,8 @@ export class TableDocImpl<Model> implements TableDoc<Model> {
       // Return the updated document
       // return response.data.data as DocId<Model>
     } catch (e: any) {
-      throw new Error(`Something went wrong updating document ${this.doc_id}: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong updating document ${this.doc_id}: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 
@@ -71,7 +72,8 @@ export class TableDocImpl<Model> implements TableDoc<Model> {
       // Update the table data with the latest data from the database
       this.doc = response.data.data as DocId<Model>
     } catch (e: any) {
-      throw new Error(`Something went wrong refetching document ${this.doc_id}: ${e.message || String(e)}`)
+      // throw new Error(`Something went wrong refetching document ${this.doc_id}: ${e.message || String(e)}`)
+      throw new Error(e)
     }
   }
 

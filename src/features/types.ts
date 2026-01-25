@@ -11,6 +11,11 @@ export type Connection = {
   password: string
 }
 
+export type ConnectionWithToken = {
+  server: string | null
+  database: string
+  token: string
+}
 export type Criteria<Model> = Partial<Record<keyof Model, string | number | boolean>>
 
 export type CriteriaAdvanced<Model> = {

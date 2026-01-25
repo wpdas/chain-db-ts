@@ -1,4 +1,4 @@
-export { ChainDB, connect } from './features/chain-db'
+export { ChainDB, connect, connectWithToken } from './features/chain-db'
 export {
   BasicResponse,
   Operators,
@@ -11,3 +11,4 @@ export {
 } from './features/types'
 export { default as Events } from './features/events'
 export { TableDocImpl } from './features/table-doc'
+export { default as Table } from './features/table';
