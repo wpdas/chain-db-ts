@@ -40,7 +40,7 @@ import { connectWithToken } from 'chain-db-ts'
 // Connect to Chain DB sync
 // Parameters: server | database | token
 // If the server parameter is null, "http://localhost:2818" will be used as default
-const db = await connectWithToken({
+const db = connectWithToken({
   server: 'http://localhost:2818',
   database: 'my-database',
   // Go to https://github.com/wpdas/chain-db?tab=readme-ov-file#authentication to understand how to get this token
@@ -50,21 +50,22 @@ const db = await connectWithToken({
 
 ### Working with Tables
 
-Define your table structure using TypeScript interfaces:
+Define your table structure using TypeScript interfaces or types:
 
 ```typescript
-// Define your table structure
+// Define your table schema
 interface GreetingTable {
   greeting: string
 }
 
-// Define a more complex table
+// Define a more complex table schema
 interface UserTable {
   id: number
   name: string
   email: string
   active: boolean
   createdAt: string
+  address: {...}
 }
 ```
 
@@ -72,10 +73,10 @@ interface UserTable {
 
 ```typescript
 // Table Instances
-const Greeting = db.getTable<GreetingTable>('greetings')
-const User = db.getTable<UserTable>('users')
+const Greeting = db.getTable<GreetingTable>('greetings') // where "greetings" is the table name
+const User = db.getTable<UserTable>('users') // where "users" is the table name
 
-// Creates a new greeting and returns its content
+// Creates and stores new data into greetings table and returns its content
 const newGreeting = await Greeting.new({ greeting: "Hello" })
 // newGreeting.doc => { doc_id: "xyz123", greeting: "Hello" }
 // newGreeting.getTableName() => "greetings"
