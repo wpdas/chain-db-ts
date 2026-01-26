@@ -1,6 +1,7 @@
 // Contants
 export const DEFAULT_API_SERVER = 'http://localhost:2818'
 export const API_BASE = '/api/v1'
+export const CREATE_DATABASE = `${API_BASE}/database/create`
 export const CONNECT = `${API_BASE}/database/connect`
 export const GET_TABLE = (table: string) => `${API_BASE}/table/${table}`
 export const UPDATE_ITEM = (table: string) => `${API_BASE}/table/${table}/update`

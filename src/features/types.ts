@@ -4,6 +4,25 @@ export type BasicResponse<D> = {
   data?: D
 }
 
+export type DatabaseCreation = {
+  /**
+   * Server location. If the `server` parameter is empty, then "http://localhost:2818" will be used.
+   */
+  server: string | null
+  /**
+   * Database name
+   */
+  database: string
+  /**
+   * User to access the database
+   */
+  user: string
+  /**
+   * Password to access the database
+   */
+  password: string
+}
+
 export type Connection = {
   server: string | null
   database: string

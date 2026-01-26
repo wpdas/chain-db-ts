@@ -1,4 +1,4 @@
-export { ChainDB, connect, connectWithToken } from './features/chain-db'
+export { ChainDB, createDatabase, connect, connectWithToken } from './features/chain-db'
 export {
   BasicResponse,
   Operators,

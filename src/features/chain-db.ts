@@ -1,7 +1,7 @@
-import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS } from './constants'
+import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS, CREATE_DATABASE } from './constants'
 import { post } from './utils'
 import Table from './table'
-import { Connection, ConnectionWithToken, EventCallback } from './types'
+import { Connection, ConnectionWithToken, DatabaseCreation, EventCallback } from './types'
 import Events from './events'
 
 export class ChainDB {
@@ -120,12 +120,37 @@ export class ChainDB {
   }
 }
 
+/**
+ * Create a new database
+ * @param databaseCreation Database creation information
+ * @returns Database creation response
+ */
+export const createDatabase = async (databaseCreation: DatabaseCreation) => {
+  const { server, database, user, password } = databaseCreation;
+  const url = `${server || DEFAULT_API_SERVER}${CREATE_DATABASE}`
+  const response = await post(url, { name: database, user: user, password: password })
+  if (!response.data.success) {
+    throw new Error(response.data.message)
+  }
+  return response.data.data
+}
+
+/**
+ * Connect to a database
+ * @param connection Connection information
+ * @returns 
+ */
 export const connect = async (connection: Connection) => {
   let chainDb = new ChainDB()
   await chainDb.connect(connection)
   return chainDb
 }
 
+/**
+ * Connect to a database with a token
+ * @param connection Connection information with token
+ * @returns 
+ */
 export const connectWithToken = (connection: ConnectionWithToken) => {
   let chainDb = new ChainDB()
   chainDb.connectWithToken(connection)

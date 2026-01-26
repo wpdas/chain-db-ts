@@ -12,7 +12,22 @@ yarn add chain-db-ts
 
 ## Usage
 
-### Connecting to Chain DB
+### Creating Database
+
+```typescript
+import { createDatabase } from 'chain-db-ts'
+
+const main = async () => {
+  try {
+    const response = await createDatabase({server: "http://localhost:2818", database: "my-database", user: "root", password: "1234"});
+    console.log(response); // Success message
+  } catch (error: any) {
+    console.error('Error creating database:', error.message);
+  }
+}
+```
+
+### Connecting to Database
 
 #### Asynchronously
 
