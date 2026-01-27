@@ -8,7 +8,8 @@ export {
   EventTypes,
   EventData,
   EventCallback,
-  PaginatedResponse
+  PaginatedResponse,
+  DocId
 } from './features/types'
 export { default as Events } from './features/events'
 export { TableDocImpl } from './features/table-doc'

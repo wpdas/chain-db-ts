@@ -2,7 +2,7 @@ import { ChainDB } from './chain-db'
 import { FIND_WHERE_ADVANCED, FIND_WHERE_BASIC, GET_HISTORY, GET_TABLE, PERSIST_NEW_DATA, GET_DOC, DELETE_DOC, GET_DOC_IDS } from './constants'
 import { del, get, post } from './utils'
 import { Criteria, CriteriaAdvanced, DocId, PaginatedResponse, TableDoc } from './types'
-import { TableDocImpl } from './table-doc'
+import { makeTableDocImpl, TableDocImpl } from './table-doc'
 
 class Table<Model> {
   /**
@@ -135,7 +135,10 @@ class Table<Model> {
 
       // Create a TableDoc instance for each document in the found data
       const paginatedData = response.data.data as PaginatedResponse<DocId<Model>>
-      const found = paginatedData.data.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+      const found = paginatedData.data.map((item: DocId<Model>) => {
+        const tableDocImpl = new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db)
+        return makeTableDocImpl<DocId<Model>>(tableDocImpl)
+      })
 
       return {
         data: found,
@@ -211,7 +214,11 @@ class Table<Model> {
 
       // Create a TableDoc instance for each document in the found data
       const paginatedData = response.data.data as PaginatedResponse<DocId<Model>>
-      const found = paginatedData.data.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+      
+      const found = paginatedData.data.map((item: DocId<Model>) => {
+        const tableDocImpl = new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db)
+        return makeTableDocImpl<DocId<Model>>(tableDocImpl)
+      })
 
       return {
         data: found,

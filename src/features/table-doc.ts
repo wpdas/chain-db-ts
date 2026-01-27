@@ -91,3 +91,36 @@ export class TableDocImpl<Model> implements TableDoc<Model> {
     return Object.keys(this.doc as {}).length === 0
   }
 }
+
+/**
+ * Make a TableDocImpl instance into a TableDoc object. This is needed because when sending an instance of TableDocImpl, the
+ * private are being sent to the server, which is not needed.
+ * @param tableDocImplInstance 
+ * @returns 
+ */
+export function makeTableDocImpl<Model>(tableDocImplInstance: TableDocImpl<Model>) {
+  return {
+    /**
+     * The document data
+     */
+    doc: tableDocImplInstance.doc,
+    /**
+     * Update the document data
+     * This will update the specific document without creating a new one
+     */
+    update: () => tableDocImplInstance.update(),
+    /**
+     * Refetch the document data from the database
+     * Useful when the document might have been updated by another application
+     */
+    refetch: () => tableDocImplInstance.refetch(),
+    /**
+     * Get the table name this document belongs to
+     */
+    getTableName: () => tableDocImplInstance.getTableName(),
+    /**
+     * Check if the table is empty
+     */
+    isEmpty: () => tableDocImplInstance.isEmpty(),
+  }
+}
