@@ -132,3 +132,10 @@ export type DocId<Model> = Model & {
    */
   readonly doc_id: string
 }
+
+export type PaginatedResponse<D> = {
+  data: D[]
+  total: number,
+  offset: number,
+  limit: number,
+}

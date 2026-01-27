@@ -12,3 +12,8 @@ export const get = (url: string, auth = '') =>
   axios.get<BasicResponse<any>>(url, {
     headers: { Authorization: `Basic ${auth}` },
   })
+
+export const del = (url: string, auth = '') =>
+  axios.delete<BasicResponse<any>>(url, {
+    headers: { 'content-type': 'application/json', Authorization: `Basic ${auth}` },
+  })

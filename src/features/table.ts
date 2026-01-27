@@ -1,7 +1,7 @@
 import { ChainDB } from './chain-db'
-import { FIND_WHERE_ADVANCED, FIND_WHERE_BASIC, GET_HISTORY, GET_TABLE, PERSIST_NEW_DATA, GET_DOC } from './constants'
-import { get, post } from './utils'
-import { Criteria, CriteriaAdvanced, DocId, TableDoc } from './types'
+import { FIND_WHERE_ADVANCED, FIND_WHERE_BASIC, GET_HISTORY, GET_TABLE, PERSIST_NEW_DATA, GET_DOC, DELETE_DOC, GET_DOC_IDS } from './constants'
+import { del, get, post } from './utils'
+import { Criteria, CriteriaAdvanced, DocId, PaginatedResponse, TableDoc } from './types'
 import { TableDocImpl } from './table-doc'
 
 class Table<Model> {
@@ -49,8 +49,8 @@ class Table<Model> {
    * in a range of depth
    * @param limit Maximum number of items to return (default: 100)
    */
-  async getHistory(limit = 100) {
-    const url = `${this.db.server}${GET_HISTORY(this.name, limit)}`
+  async getHistory(limit = 100, offset = 0) {
+    const url = `${this.db.server}${GET_HISTORY(this.name, limit, offset)}`
 
     try {
       const response = await get(url, this.db.auth)
@@ -59,12 +59,16 @@ class Table<Model> {
         throw new Error(response.data.message)
       }
 
-      // Return data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      // return response.data.data as DocId<Model>[]
-
       // Create a TableDoc instance for each document in the history
-      const history = response.data.data as DocId<Model>[]
-      return history.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+      const paginatedData = response.data.data as PaginatedResponse<DocId<Model>>
+      const history = paginatedData.data.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+
+      return {
+        data: history,
+        total: paginatedData.total,
+        offset: paginatedData.offset,
+        limit: paginatedData.limit,
+      } as PaginatedResponse<TableDoc<Model>>
     } catch (e: any) {
       // throw new Error(`Something went wrong with getHistory operation: ${e.message || String(e)}`)
       throw new Error(e)
@@ -112,12 +116,13 @@ class Table<Model> {
    *   score: 100
    * })
    */
-  async findWhere(criteria: Criteria<Model>, limit = 1000, reverse = true) {
+  async findWhere(criteria: Criteria<Model>, limit = 1000, offset = 0, reverse = true) {
     const url = `${this.db.server}${FIND_WHERE_BASIC(this.name)}`
 
     const body = {
       criteria,
       limit,
+      offset,
       reverse,
     }
 
@@ -128,12 +133,16 @@ class Table<Model> {
         throw new Error(response.data.message)
       }
 
-      // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      // return response.data.data as DocId<Model>[]
-
       // Create a TableDoc instance for each document in the found data
-      const foundData = response.data.data as DocId<Model>[]
-      return foundData.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+      const paginatedData = response.data.data as PaginatedResponse<DocId<Model>>
+      const found = paginatedData.data.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+
+      return {
+        data: found,
+        total: paginatedData.total,
+        offset: paginatedData.offset,
+        limit: paginatedData.limit,
+      } as PaginatedResponse<TableDoc<Model>>
     } catch (e: any) {
       // throw new Error(`Something went wrong with findWhere operation: ${e.message || String(e)}`)
       throw new Error(e)
@@ -147,12 +156,12 @@ class Table<Model> {
    * @returns The first found item matching the criteria or null if no item is found
    */
   async find(criteria: Criteria<Model>, reverse = true) {
-    const found = await this.findWhere(criteria, 1, reverse)
-    if (found.length === 0) {
+    const found = await this.findWhere(criteria, 1, 0, reverse)
+    if (found.data.length === 0) {
       const data = {} as DocId<Model>;
       return new TableDocImpl<DocId<Model>>(this.name, '', data, this.db)
     }
-    return found[0]
+    return found.data[0]
   }
 
   /**
@@ -183,12 +192,13 @@ class Table<Model> {
    *   }
    * ])
    */
-  async findWhereAdvanced(criteria: CriteriaAdvanced<Model>[], limit = 1000, reverse = true) {
+  async findWhereAdvanced(criteria: CriteriaAdvanced<Model>[], limit = 1000, offset = 0, reverse = true) {
     const url = `${this.db.server}${FIND_WHERE_ADVANCED(this.name)}`
 
     const body = {
       criteria,
       limit,
+      offset,
       reverse,
     }
 
@@ -199,12 +209,16 @@ class Table<Model> {
         throw new Error(response.data.message)
       }
 
-      // Return found data. Only table fields, e.g.: [{fieldA: 'Hi', filedB: 22}]
-      // return response.data.data as DocId<Model>[]
-
       // Create a TableDoc instance for each document in the found data
-      const foundData = response.data.data as DocId<Model>[]
-      return foundData.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+      const paginatedData = response.data.data as PaginatedResponse<DocId<Model>>
+      const found = paginatedData.data.map((item: DocId<Model>) => new TableDocImpl<DocId<Model>>(this.name, item.doc_id, item, this.db))
+
+      return {
+        data: found,
+        total: paginatedData.total,
+        offset: paginatedData.offset,
+        limit: paginatedData.limit,
+      } as PaginatedResponse<TableDoc<Model>>
     } catch (e: any) {
       // throw new Error(`Something went wrong with findWhereAdvanced operation: ${e.message || String(e)}`)
       throw new Error(e)
@@ -239,12 +253,12 @@ class Table<Model> {
    * ])
    */
   async findAdvanced(criteria: CriteriaAdvanced<Model>[], reverse = true) {
-    const found = await this.findWhereAdvanced(criteria, 1, reverse)
-    if (found.length === 0) {
+    const found = await this.findWhereAdvanced(criteria, 1, 0, reverse)
+    if (found.data.length === 0) {
       const data = ({} as DocId<Model>);
       return new TableDocImpl<DocId<Model>>(this.name, '', data, this.db)
     }
-    return found[0]
+    return found.data[0]
   }
 
   /**
@@ -268,6 +282,36 @@ class Table<Model> {
       // throw new Error(`Something went wrong with getDoc operation: ${e.message || String(e)}`)
       throw new Error(e)
     }
+  }
+
+  /**
+   * Delete a specific document by its ID
+   * @param doc_id The document ID to delete
+   * @returns Document deletion response
+   */
+  async deleteDoc(doc_id: string) {
+    const url = `${this.db.server}${DELETE_DOC(this.name, doc_id)}`
+    const response = await del(url, this.db.auth)
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data
+  }
+
+  /**
+   * Get the document IDs of a table
+   * @param limit Limit of document IDs to retrieve
+   * @param offset Offset of document IDs to retrieve
+   * @param reverse Reverse order of document IDs
+   * @returns Document IDs
+   */
+  async getDocIds(limit = 50, offset = 0, reverse = true) {
+    const url = `${this.db.server}${GET_DOC_IDS(this.name, limit, offset, reverse)}`
+    const response = await get(url, this.db.auth)
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data as PaginatedResponse<string>
   }
 }
 

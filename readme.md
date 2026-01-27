@@ -65,6 +65,32 @@ const db = connectWithToken({
 
 ### Working with Tables
 
+#### Getting Table List
+
+```typescript
+// Get all tables in the database
+const tables = await db.getTables()
+console.log(tables) // e.g., ['greetings', 'users']
+```
+
+#### Deleting a Table
+
+```typescript
+// Delete a table
+await db.deleteTable('greetings')
+```
+
+#### Getting Document IDs
+
+```typescript
+// Get document IDs from a table
+const docIds = await Greeting.getDocIds(50, 0, true)
+// docIds.data => array of document IDs
+// docIds.total => total number of documents
+// docIds.offset => current offset
+// docIds.limit => limit used
+```
+
 Define your table structure using TypeScript interfaces or types:
 
 ```typescript
@@ -122,17 +148,25 @@ greeting.doc = { greeting: "Olá Mundo!" }; // OR greeting.doc.greeting = "Olá 
 await greeting.update()
 ```
 
-<!-- Note: The `TableDoc` instance returned by `getByDocId()` is a simplified version of a table that only allows updating the specific document. -->
+### Deleting Item
+
+```typescript
+// Delete a document by its ID
+await Greeting.deleteDoc('550e8400-e29b-41d4-a716-446655440000')
+```
 
 ### Getting Table History
 
 ```typescript
 // Get the last 100 changes to the table
 const history = await Greeting.getHistory(100)
-history.forEach(item => {
+history.data.forEach(item => {
   // Table data instance
   console.log(item.doc);
 });
+// history.total => total number of items
+// history.offset => current offset
+// history.limit => limit used
 // Example output:
 // { greeting: 'Hello, Chain DB!' },
 // { greeting: 'Hello' },
@@ -185,11 +219,20 @@ The `EventData` object contains:
 
 ```typescript
 // Find items with exact matches
-const users = await User.findWhere(
+const result = await User.findWhere(
   { active: true, name: 'John' }, // criteria
   10, // limit (default: 1000)
+  0, // offset (default: 0)
   true // reverse order (default: true)
 )
+// result.data => array of found items
+// result.total => total number of items
+// result.offset => current offset
+// result.limit => limit used
+
+// Find the first item matching criteria
+const user = await User.find({ active: true, name: 'John' })
+console.log(user.doc) // First matching user or empty document
 ```
 
 #### Advanced Queries
@@ -198,7 +241,7 @@ const users = await User.findWhere(
 import { Operators } from 'chain-db-ts'
 
 // Find items with advanced criteria
-const users = await User.findWhereAdvanced(
+const result = await User.findWhereAdvanced(
   [
     {
       field: 'name',
@@ -212,8 +255,21 @@ const users = await User.findWhereAdvanced(
     },
   ],
   10, // limit
+  0, // offset
   true // reverse order
 )
+// result.data => array of found items
+// result.total => total number of items
+
+// Find the first item with advanced criteria
+const user = await User.findAdvanced([
+  {
+    field: 'name',
+    operator: Operators.CONTAINS,
+    value: 'John',
+  },
+])
+console.log(user.doc) // First matching user or empty document
 ```
 
 Available operators:

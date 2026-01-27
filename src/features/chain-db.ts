@@ -1,5 +1,5 @@
-import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS, CREATE_DATABASE } from './constants'
-import { post } from './utils'
+import { DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS, CREATE_DATABASE, GET_TABLES, DELETE_TABLE } from './constants'
+import { del, get, post } from './utils'
 import Table from './table'
 import { Connection, ConnectionWithToken, DatabaseCreation, EventCallback } from './types'
 import Events from './events'
@@ -79,6 +79,33 @@ export class ChainDB {
     //    */
     //   getHistory: (depth: number) => Promise<Model[]>
     // }
+  }
+
+  /**
+   * Get the list of tables
+   * @returns List of tables
+   */
+  async getTables() {
+    const url = `${this.server}${GET_TABLES}`
+    const response = await get(url, this.auth)
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data as string[]
+  }
+
+  /**
+   * Delete a table
+   * @param table Table name
+   * @returns Table deletion response
+   */
+  async deleteTable(table: string) {
+    const url = `${this.server}${DELETE_TABLE(table)}`
+    const response = await del(url, this.auth)
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data
   }
 
   events() {
